@@ -67,3 +67,6 @@ ehthumbs.db
 
 # Pyright
 .pyright/
+
+# txt files
+.txt
