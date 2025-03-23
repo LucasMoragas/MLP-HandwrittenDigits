@@ -27,7 +27,7 @@ class MLPClassifier:
           - self.T é gerado automaticamente com base na ordem dos dados.
         """
         self.X = get_train_data()
-        self.input_dim = self.X.shape[1]  # Espera-se 255
+        self.input_dim = 256 # Espera-se 255
         self.output_dim = 10
         self.learning_rate = learning_rate
         self.lr_increase_factor = lr_increase_factor
@@ -141,28 +141,11 @@ class MLPClassifier:
                 correct += 1
         return correct / n_amostras
     
-    def display_weights_and_bias(self):
-        """
-        Exibe as matrizes de pesos e os bias:
-        - Pesos da camada de entrada para a camada oculta.
-        - Bias da camada oculta.
-        - Pesos da camada oculta para a camada de saída.
-        - Bias da camada de saída.
-        """
-        print("Pesos da Entrada para a Camada Oculta:")
-        print(self.weights_input_hidden)
-        print("\nBias da Camada Oculta:")
-        print(self.bias_hidden)
-        print("\nPesos da Camada Oculta para a Saída:")
-        print(self.weights_hidden_output)
-        print("\nBias da Camada de Saída:")
-        print(self.bias_output)
-        
-        # Gera arquivos CSV
-        np.savetxt('./data/input_weights_v2.csv', self.weights_input_hidden, fmt='%f', delimiter=',')
-        np.savetxt('./data/input_bias_v2.csv', self.bias_hidden, fmt='%f', delimiter=',')
-        np.savetxt('./data/output_weights_v2.csv', self.weights_hidden_output, fmt='%f', delimiter=',')
-        np.savetxt('./data/output_bias_v2.csv', self.bias_output, fmt='%f', delimiter=',')
+    def generate_weights_and_bias(self):
+        np.savetxt('./result/input_weights_v1.csv', self.weights_input_hidden, fmt='%f', delimiter=',')
+        np.savetxt('./result/input_bias_v1.csv', self.bias_hidden, fmt='%f', delimiter=',')
+        np.savetxt('./result/output_weights_v1.csv', self.weights_hidden_output, fmt='%f', delimiter=',')
+        np.savetxt('./result/output_bias_v1.csv', self.bias_output, fmt='%f', delimiter=',')
 
 
 if __name__ == '__main__':
@@ -175,4 +158,4 @@ if __name__ == '__main__':
     acc = mlp.compute_accuracy()
     print("\nAcurácia total:", acc)
     
-    mlp.display_weights_and_bias()
+    mlp.generate_weights_and_bias()
