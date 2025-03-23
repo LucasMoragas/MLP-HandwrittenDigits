@@ -1,7 +1,8 @@
 import numpy as np
+from mlp_handwritten_digits.get_data import get_train_data
 
 class MLPClassifier:
-    def __init__(self, learning_rate=0.001, neurons_hidden_layer=50, error_threshold=0.001, max_iterations=10000, num_exemplares=10):
+    def __init__(self, learning_rate=0.001, neurons_hidden_layer=50, error_threshold=0.001, max_iterations=10000, num_exemplares=90):
         """
         Inicializa os parâmetros do modelo para classificação.
 
@@ -10,25 +11,25 @@ class MLPClassifier:
           - neurons_hidden_layer: número de neurônios na camada oculta.
           - error_threshold: erro mínimo para término do treinamento.
           - max_iterations: número máximo de iterações para evitar loop infinito.
-          - num_exemplares: número de exemplares para cada classe (dígitos 0-9). Total de amostras será num_exemplares*10.
-        
+          - num_exemplares: número de exemplares para cada classe (dígitos 0-9).
+                           Total de amostras será num_exemplares * 10 (neste caso, 90*10 = 900).
+
         Observações:
-          - A dimensão de entrada é 256 (imagens 16x16).
+          - A dimensão de entrada é determinada a partir dos dados carregados (deve ser 255 conforme o get_train_data).
           - A dimensão de saída é 10 (dígitos de 0 a 9) com codificação bipolar.
-          - self.X deve ser carregado posteriormente a partir do arquivo txt.
+          - self.X é carregado a partir do arquivo txt.
           - self.T é gerado automaticamente com base no vetor target fornecido.
         """
-        self.input_dim = 256
+        # Carrega os dados de treinamento (X terá shape [900, 255])
+        self.X = get_train_data()
+        self.input_dim = self.X.shape[1]  # Ajusta dinamicamente com base nos dados (espera-se 255)
         self.output_dim = 10
         self.learning_rate = learning_rate
         self.neurons_hidden_layer = neurons_hidden_layer
         self.error_threshold = error_threshold
         self.max_iterations = max_iterations
 
-        # self.X deve ser carregado posteriormente com os dados de treinamento (shape: [num_amostras, 256])
-        self.X = None
-
-        # Gera a matriz de targets (Y) para 10 exemplares de cada dígito (0-9)
+        # Gera a matriz de targets (T) para 90 exemplares de cada dígito (0-9), totalizando 900 linhas.
         self.T = self.create_targets(num_exemplares)
 
         # Inicializa os pesos e bias com valores aleatórios pequenos (centralizados em zero)
@@ -37,7 +38,7 @@ class MLPClassifier:
         self.weights_hidden_output = np.random.rand(self.output_dim, self.neurons_hidden_layer) - 0.5
         self.bias_output = np.random.rand(self.output_dim, 1) - 0.5
 
-        # Inicializa as variáveis de controle do treinamento
+        # Variáveis de controle do treinamento
         self.error = float('inf')
         self.iterations = 0
         self.error_history = []
@@ -45,32 +46,29 @@ class MLPClassifier:
         self.training_complete = False
 
     def create_targets(self, num_exemplares):
-        """
-        Cria a matriz de targets para classificação.
-        
-        Para cada dígito de 0 a 9, cria um vetor target com:
-          - 1 na posição correspondente à classe,
-          - -1 nas demais posições.
-        
-        Cada vetor é repetido num_exemplares vezes, gerando uma matriz com shape (num_exemplares*10, 10).
+      """
+      Cria a matriz de targets para classificação de acordo com a ordem dos dados.
+      
+      Considerando que:
+        - A linha 1 (índice 0) corresponde ao dígito 0,
+        - A linha 2 (índice 1) corresponde ao dígito 1,
+        - ...
+        - A linha 10 (índice 9) corresponde ao dígito 9,
+        - A linha 11 (índice 10) corresponde novamente ao dígito 0, e assim sucessivamente,
+      
+      Este método gera uma matriz com shape (num_exemplares*10, 10), onde para cada amostra i:
+        - É colocado 1 na posição (i mod 10);
+        - São colocados -1 nas demais posições.
+      """
+      n_amostras = num_exemplares * 10
+      targets = np.empty((n_amostras, 10))
+      for i in range(n_amostras):
+          t = -np.ones(10)
+          digit = i % 10  # Determina o dígito correspondente à linha
+          t[digit] = 1
+          targets[i] = t
+      return targets
 
-        Exemplo:
-          Para num_exemplares = 10, teremos 100 linhas, onde:
-            - A linha 1 representa o target para o dígito 0: [ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
-            - A linha 2 representa o target para o dígito 1: [ -1, 1, -1, -1, -1, -1, -1, -1, -1, -1 ]
-            - ...
-            - A linha 10 representa o target para o dígito 9: [ -1, -1, -1, -1, -1, -1, -1, -1, -1, 1 ]
-            - A linha 11 recomeça para o dígito 0 e assim sucessivamente.
-        """
-        num_classes = 10
-        # Cria uma matriz base de shape (10, 10) com todos os elementos -1
-        base_targets = -np.ones((num_classes, num_classes))
-        # Define 1 na posição correspondente para cada dígito
-        for i in range(num_classes):
-            base_targets[i, i] = 1
-        # Repete cada vetor target num_exemplares vezes
-        targets = np.repeat(base_targets, num_exemplares, axis=0)
-        return targets
 
     def tanh(self, x):
         """Função de ativação tangente hiperbólica."""
@@ -90,18 +88,15 @@ class MLPClassifier:
     def train(self):
         """
         Executa o treinamento da MLP utilizando o algoritmo de backpropagation.
-        
+
         Para cada amostra:
           - Realiza o forward pass (camada oculta e camada de saída);
           - Calcula o erro quadrático em relação ao target;
           - Executa o backpropagation para ajustar os pesos e bias.
-          
+
         O treinamento para quando o erro total acumulado na iteração for menor que error_threshold
         ou quando o número máximo de iterações for atingido.
         """
-        if self.X is None:
-            raise ValueError("Os dados de entrada (self.X) não foram carregados.")
-
         n_amostras = self.X.shape[0]
 
         while self.error > self.error_threshold and self.iterations < self.max_iterations:
@@ -109,7 +104,7 @@ class MLPClassifier:
             self.error = 0
 
             for i in range(n_amostras):
-                # Prepara a entrada e o target (converte para vetor coluna)
+                # Converte a amostra e o target em vetores coluna
                 x_sample = self.X[i].reshape(self.input_dim, 1)
                 t_sample = self.T[i].reshape(self.output_dim, 1)
 
@@ -125,7 +120,7 @@ class MLPClassifier:
                 sample_error = 0.5 * np.sum((t_sample - a_output)**2)
                 self.error += sample_error
 
-                # Backpropagation: cálculo dos deltas para saída e camada oculta
+                # Backpropagation: calcula os deltas para a saída e para a camada oculta
                 delta_output = (t_sample - a_output) * self.tanh_derivative(z_output)
                 delta_hidden = np.dot(self.weights_hidden_output.T, delta_output) * self.tanh_derivative(z_hidden)
 
@@ -135,7 +130,6 @@ class MLPClassifier:
                 self.weights_input_hidden += self.learning_rate * np.dot(delta_hidden, x_sample.T)
                 self.bias_hidden += self.learning_rate * delta_hidden
 
-            # Armazena os históricos de erro e iterações para análise
             self.error_history.append(self.error)
             self.iterations_history.append(self.iterations)
 
@@ -148,10 +142,10 @@ class MLPClassifier:
     def predict(self, x):
         """
         Realiza a predição para uma única amostra de entrada.
-        
+
         Parâmetro:
-          - x: vetor de entrada com 256 elementos (imagem 16x16).
-          
+          - x: vetor de entrada com dimensão igual a self.input_dim (deve ser 255, conforme os dados).
+
         Retorna:
           - vetor de 10 elementos com valores 1 ou -1, obtidos aplicando o degrau bipolar à saída.
         """
