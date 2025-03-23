@@ -18,7 +18,7 @@ class MLPClassifier:
           - A dimensão de entrada é determinada a partir dos dados carregados (deve ser 255 conforme o get_train_data).
           - A dimensão de saída é 10 (dígitos de 0 a 9) com codificação bipolar.
           - self.X é carregado a partir do arquivo txt.
-          - self.T é gerado automaticamente com base no vetor target fornecido.
+          - self.T é gerado automaticamente com base na ordem dos dados.
         """
         # Carrega os dados de treinamento (X terá shape [900, 255])
         self.X = get_train_data()
@@ -29,7 +29,8 @@ class MLPClassifier:
         self.error_threshold = error_threshold
         self.max_iterations = max_iterations
 
-        # Gera a matriz de targets (T) para 90 exemplares de cada dígito (0-9), totalizando 900 linhas.
+        # Gera a matriz de targets (T) de acordo com a ordem dos dados:
+        # a linha 1 é dígito 0, linha 2 dígito 1, ..., linha 10 dígito 9, linha 11 dígito 0, etc.
         self.T = self.create_targets(num_exemplares)
 
         # Inicializa os pesos e bias com valores aleatórios pequenos (centralizados em zero)
@@ -46,29 +47,28 @@ class MLPClassifier:
         self.training_complete = False
 
     def create_targets(self, num_exemplares):
-      """
-      Cria a matriz de targets para classificação de acordo com a ordem dos dados.
-      
-      Considerando que:
-        - A linha 1 (índice 0) corresponde ao dígito 0,
-        - A linha 2 (índice 1) corresponde ao dígito 1,
-        - ...
-        - A linha 10 (índice 9) corresponde ao dígito 9,
-        - A linha 11 (índice 10) corresponde novamente ao dígito 0, e assim sucessivamente,
-      
-      Este método gera uma matriz com shape (num_exemplares*10, 10), onde para cada amostra i:
-        - É colocado 1 na posição (i mod 10);
-        - São colocados -1 nas demais posições.
-      """
-      n_amostras = num_exemplares * 10
-      targets = np.empty((n_amostras, 10))
-      for i in range(n_amostras):
-          t = -np.ones(10)
-          digit = i % 10  # Determina o dígito correspondente à linha
-          t[digit] = 1
-          targets[i] = t
-      return targets
+        """
+        Cria a matriz de targets para classificação de acordo com a ordem dos dados.
 
+        Considerando que:
+          - A linha 1 (índice 0) corresponde ao dígito 0,
+          - A linha 2 (índice 1) corresponde ao dígito 1,
+          - ...
+          - A linha 10 (índice 9) corresponde ao dígito 9,
+          - A linha 11 (índice 10) corresponde novamente ao dígito 0, e assim sucessivamente,
+
+        Este método gera uma matriz com shape (num_exemplares*10, 10), onde para cada amostra i:
+          - É colocado 1 na posição (i mod 10);
+          - São colocados -1 nas demais posições.
+        """
+        n_amostras = num_exemplares * 10
+        targets = np.empty((n_amostras, 10))
+        for i in range(n_amostras):
+            t = -np.ones(10)
+            digit = i % 10  # Determina o dígito correspondente à linha
+            t[digit] = 1
+            targets[i] = t
+        return targets
 
     def tanh(self, x):
         """Função de ativação tangente hiperbólica."""
@@ -155,3 +155,34 @@ class MLPClassifier:
         z_output = np.dot(self.weights_hidden_output, a_hidden) + self.bias_output
         a_output = self.tanh(z_output)
         return self.bipolar_step(a_output)
+
+    def compute_accuracy(self):
+        """
+        Executa a predição para todas as amostras e calcula a acurácia,
+        ou seja, a razão entre o número de amostras classificadas corretamente e o total de amostras.
+        A classificação é definida pelo índice do maior valor na saída (argmax).
+        """
+        n_amostras = self.X.shape[0]
+        correct = 0
+        for i in range(n_amostras):
+            # Obtém a predição para a amostra i
+            prediction = self.predict(self.X[i])
+            # A classe prevista é o índice do maior valor na predição
+            predicted_class = np.argmax(prediction)
+            # A classe verdadeira é o índice onde o target possui o valor 1
+            true_class = np.argmax(self.T[i])
+            if predicted_class == true_class:
+                correct += 1
+        accuracy = correct / n_amostras
+        return accuracy
+
+if __name__ == '__main__':
+    # Cria uma instância da MLP com os parâmetros desejados
+    mlp = MLPClassifier(learning_rate=0.001, neurons_hidden_layer=50, error_threshold=0.001, max_iterations=10000, num_exemplares=90)
+    
+    # Inicia o treinamento
+    mlp.train()
+    
+    # Calcula e imprime a acurácia total sobre todas as amostras
+    acc = mlp.compute_accuracy()
+    print("\nAcurácia total:", acc)
