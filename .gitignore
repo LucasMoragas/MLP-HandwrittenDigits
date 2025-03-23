@@ -70,3 +70,6 @@ ehthumbs.db
 
 # txt files
 .txt
+
+# csv files
+.csv
