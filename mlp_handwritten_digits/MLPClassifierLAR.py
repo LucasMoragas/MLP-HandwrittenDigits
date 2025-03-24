@@ -5,29 +5,9 @@ class MLPClassifier:
     def __init__(self, learning_rate=0.001, neurons_hidden_layer=50, error_threshold=0.001, 
                  max_iterations=10000, num_exemplares=90, lr_increase_factor=1.05, lr_decrease_factor=0.7,
                  min_learning_rate=1e-6, improvement_tolerance=1e-5):
-        """
-        Inicializa os parâmetros do modelo para classificação com taxa de aprendizagem adaptativa.
-
-        Parâmetros:
-          - learning_rate: taxa de aprendizagem inicial.
-          - neurons_hidden_layer: número de neurônios na camada oculta.
-          - error_threshold: erro mínimo para término do treinamento.
-          - max_iterations: número máximo de épocas (iterações) para treinamento.
-          - num_exemplares: número de exemplares para cada classe (dígitos 0-9).
-                           Total de amostras será num_exemplares * 10 (neste caso, 90*10 = 900).
-          - lr_increase_factor: fator para aumentar a taxa de aprendizagem se o erro diminuir significativamente.
-          - lr_decrease_factor: fator para reduzir a taxa de aprendizagem se o erro não diminuir significativamente.
-          - min_learning_rate: valor mínimo permitido para a taxa de aprendizagem.
-          - improvement_tolerance: tolerância mínima para considerar que houve melhoria no erro.
-          
-        Observações:
-          - A dimensão de entrada é determinada a partir dos dados carregados (deve ser 255 conforme o get_train_data).
-          - A dimensão de saída é 10 (dígitos de 0 a 9) com codificação bipolar.
-          - self.X é carregado a partir do arquivo txt.
-          - self.T é gerado automaticamente com base na ordem dos dados.
-        """
+        
         self.X = get_train_data()
-        self.input_dim = 256 # Espera-se 255
+        self.input_dim = 256 
         self.output_dim = 10
         self.learning_rate = learning_rate
         self.lr_increase_factor = lr_increase_factor
@@ -142,15 +122,17 @@ class MLPClassifier:
         return correct / n_amostras
     
     def generate_weights_and_bias(self):
-        np.savetxt('./result/input_weights_v1.csv', self.weights_input_hidden, fmt='%f', delimiter=',')
-        np.savetxt('./result/input_bias_v1.csv', self.bias_hidden, fmt='%f', delimiter=',')
-        np.savetxt('./result/output_weights_v1.csv', self.weights_hidden_output, fmt='%f', delimiter=',')
-        np.savetxt('./result/output_bias_v1.csv', self.bias_output, fmt='%f', delimiter=',')
+        version = 3
+        
+        np.savetxt(f'./result/input_weights_v{version}.csv', self.weights_input_hidden, fmt='%f', delimiter=',')
+        np.savetxt(f'./result/input_bias_v{version}.csv', self.bias_hidden, fmt='%f', delimiter=',')
+        np.savetxt(f'./result/output_weights_v{version}.csv', self.weights_hidden_output, fmt='%f', delimiter=',')
+        np.savetxt(f'./result/output_bias_v{version}.csv', self.bias_output, fmt='%f', delimiter=',')
 
 
 if __name__ == '__main__':
-    mlp = MLPClassifier(learning_rate=0.001, neurons_hidden_layer=75, error_threshold=10, 
-                        max_iterations=10000, num_exemplares=90, lr_increase_factor=1.01, lr_decrease_factor=0.1,
+    mlp = MLPClassifier(learning_rate=0.001, neurons_hidden_layer=75, error_threshold=8, 
+                        max_iterations=10000, num_exemplares=90, lr_increase_factor=1.005, lr_decrease_factor=0.05,
                         min_learning_rate=1e-5, improvement_tolerance=1e-4)
     
     mlp.train()

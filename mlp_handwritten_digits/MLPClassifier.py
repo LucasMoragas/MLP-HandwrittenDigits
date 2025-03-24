@@ -5,25 +5,6 @@ class MLPClassifier:
     def __init__(self, learning_rate=0.001, neurons_hidden_layer=75, error_threshold=10, 
                  max_iterations=10000, num_exemplares=90, lr_increase_factor=1.01, lr_decrease_factor=0.1,
                  min_learning_rate=1e-5, improvement_tolerance=1e-4):
-        """
-        Inicializa os parâmetros do modelo para classificação com taxa de aprendizagem adaptativa.
-
-        Parâmetros:
-          - learning_rate: taxa de aprendizagem inicial.
-          - neurons_hidden_layer: número de neurônios na camada oculta.
-          - error_threshold: erro mínimo para término do treinamento.
-          - max_iterations: número máximo de épocas (iterações) para treinamento.
-          - num_exemplares: número de exemplares para cada classe (dígitos 0-9).
-                           Total de amostras será num_exemplares * 10 (neste caso, 90*10 = 900).
-          - lr_increase_factor: fator para aumentar a taxa de aprendizagem se o erro diminuir significativamente.
-          - lr_decrease_factor: fator para reduzir a taxa de aprendizagem se o erro não diminuir significativamente.
-          - min_learning_rate: valor mínimo permitido para a taxa de aprendizagem.
-          - improvement_tolerance: tolerância mínima para considerar que houve melhoria no erro.
-          
-        Observações:
-          - Mesmo que os dados de treinamento sejam carregados a partir de um arquivo com 255 atributos,
-            aqui forçamos a dimensão de entrada para 256, pois os arquivos de teste possuem 256 elementos.
-        """
         # Carrega os dados de treinamento (ainda que sua forma possa ser (900, 255))
         self.X = get_train_data()
         # Define explicitamente a dimensão de entrada como 256 (imagens 16x16)
