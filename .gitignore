@@ -69,7 +69,4 @@ ehthumbs.db
 .pyright/
 
 # txt files
-.txt
-
-# csv files
-.csv
+*.txt
